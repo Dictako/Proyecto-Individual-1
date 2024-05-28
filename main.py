@@ -3,8 +3,8 @@ import pandas as pd
 
 app = FastAPI()
 
-data_items = pd.read_parquet('C:\\Users\\Alañ\\Documents\\Henry\\Proyecto 1\\Proyecto-Individual-1\\Data Limpia\\items_combinados.parquet')
+data_juegos = pd.read_parquet('Data_Limpia/juegos_steam.parquet')
 
 @app.get("/")
 def index():
-    return data_items.iloc[0]
+    return 'jh'
