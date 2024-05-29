@@ -13,7 +13,7 @@ data_review = pd.read_parquet('Data_Limpia/nuevo_reviews_limpio.parquet')
 
 @app.get("/")
 def index():
-    return str(str(data_juegos.loc[0, 'title']) + ' ' + str(data_items.loc[0, 'user_id']) + ' ' +  str(data_review.loc[0, 'user_id']))
+    return 'Bienvenido'
 
 @app.get("/developer")
 def developer( desarrollador : str ):
@@ -40,7 +40,7 @@ def developer( desarrollador : str ):
         contenido_libre.append([int(años[año]), todo, str(porcentaje)[0:5] + '%'])
         año += 1
     contenido_libre = pd.DataFrame(contenido_libre, columns= ['Año', 'Cantidad de Items', 'Contenido Libre'])
-    return contenido_libre
+    return str(contenido_libre)
 
 @app.get('/userdata')
 def userdata( User_id : str ):
