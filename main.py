@@ -11,21 +11,22 @@ data_items = pd.read_parquet('Data_Limpia/items_combinados.parquet')
 data_juegos = pd.read_parquet('Data_Limpia/juegos_steam.parquet')
 data_review = pd.read_parquet('Data_Limpia/nuevo_reviews_limpio.parquet')
 
-@app.get("/") #
+@app.get("/")
 def index():
     return str(str(data_juegos.loc[0, 'title']) + ' ' + str(data_items.loc[0, 'user_id']) + ' ' +  str(data_review.loc[0, 'user_id']))
 
 @app.get("/developer")
 def developer( desarrollador : str ):
+    desarrollador = str(desarrollador)
     porcentaje_xaño = {}
     for i in range(0, len(data_juegos)):
         if data_juegos.loc[i, 'developer'] == desarrollador:
             if str(data_juegos.loc[i, 'release_date'])[0:4] in porcentaje_xaño:
-                if 'Free' in data_juegos.loc[i, 'price']:
+                if 'Free' in str(data_juegos.loc[i, 'price']):
                     porcentaje_xaño[str(data_juegos.loc[i, 'release_date'])[0:4]]['Libre'] += 1
                 porcentaje_xaño[str(data_juegos.loc[i, 'release_date'])[0:4]]['Todo'] += 1
             else:
-                if 'Free' in data_juegos.loc[i, 'price']:
+                if 'Free' in str(data_juegos.loc[i, 'price']):
                     porcentaje_xaño[str(data_juegos.loc[i, 'release_date'])[0:4]] = {'Libre': 1, 'Todo':1}
                 else:
                     porcentaje_xaño[str(data_juegos.loc[i, 'release_date'])[0:4]] = {'Libre': 0, 'Todo':1}
@@ -57,7 +58,7 @@ def userdata( User_id : str ):
             posicion_juego = str(data_juegos.loc[data_juegos['id'] == str(data_items.loc[i, 'item_id'])].index)[7:-17]
             if posicion_juego != '':
                 posicion_juego = int(posicion_juego)
-                if not 'Free' in data_juegos.loc[posicion_juego, 'price'] and data_juegos.loc[posicion_juego, 'price'] != ' ':
+                if not 'Free' in data_juegos.loc[posicion_juego, 'price'] and data_juegos.loc[posicion_juego, 'price'] != ' ' and data_juegos.loc[posicion_juego, 'price'] != 'Third-party':
                     dinero += float(data_juegos.loc[posicion_juego, 'price'])
             
         if data_items.loc[i+1, 'user_id'] != User_id and not Finalizador:
@@ -81,7 +82,7 @@ def userdata( User_id : str ):
     return ('El usuario ' + str(User_id) + ' gastó un total de '+ str(dinero) + '$, su porcentaje de recomendaciones es del ' + str(porcentaje) + '% y tiene ' + str(items) + ' items en su biblioteca.')
 
 
-@app.get('/UserForGenre') #
+@app.get('/UserForGenre')
 def UserForGenre( genero : str ):
     usuarios = {}
     usuarios_id = []
@@ -177,8 +178,6 @@ def best_developer_year( año : int ):
         j += 1
     return mejores_tres
 
-
-
 @app.get('/developer_reviews_analysis')
 def developer_reviews_analysis( desarrolladora : str ):
     salida = {}
@@ -193,8 +192,6 @@ def developer_reviews_analysis( desarrolladora : str ):
                 elif data_review.loc[i, 'sentiment_analysis'] == 0:
                     salida[desarrolladora][0] += 1
     return salida
-
-
 
 @app.get('/recomendacion_juego')
 def recomendacion_juego(producto : str):
