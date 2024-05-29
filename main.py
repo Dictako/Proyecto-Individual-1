@@ -37,10 +37,13 @@ def developer( desarrollador : str ):
     for i in porcentaje_xaño:
         todo = porcentaje_xaño[i]['Todo']
         porcentaje = porcentaje_xaño[i]['Libre']*100/porcentaje_xaño[i]['Todo']
-        contenido_libre.append([int(años[año]), todo, str(porcentaje)[0:5] + '%'])
+        contenido_libre.append({'Año':int(años[año]), 'Cantidad de items': todo, 'Contenido libre': str(porcentaje)[0:5] + '%'})
         año += 1
-    contenido_libre = pd.DataFrame(contenido_libre, columns= ['Año', 'Cantidad de Items', 'Contenido Libre'])
-    return str(contenido_libre)
+    
+    salida = ''
+    for i in range(0,len(contenido_libre)):
+        salida += str(contenido_libre[i])
+    return salida
 
 @app.get('/userdata')
 def userdata( User_id : str ):
@@ -83,100 +86,52 @@ def userdata( User_id : str ):
 
 
 @app.get('/UserForGenre')
+#def UserForGenre( genero : str ): Debe devolver el usuario que acumula más 
+#horas jugadas para el género dado y una lista de la acumulación de horas jugadas por año de lanzamiento.
+#def UserForGenre( genero : str ): Debe devolver el usuario que acumula más 
+#horas jugadas para el género dado y una lista de la acumulación de horas jugadas por año de lanzamiento.
 def UserForGenre( genero : str ):
-    usuarios = {}
-    usuarios_id = []
-    horas_años = {}
-    lista_años = []
-    for i in range (0, len(data_items)):
-        posicion_juego = str(data_juegos.loc[data_juegos['id'] == str(data_items.loc[i, 'item_id'])].index)[7:-17]
-        if posicion_juego != '':
-            posicion_juego = int(posicion_juego)
-            if genero in data_juegos.loc[posicion_juego, 'genres']:
-                horas = int(data_items.loc[i, 'playtime_forever'])
-                año = data_juegos.loc[posicion_juego, 'release_date'][0:4]
-                if data_items.loc[i, 'user_id'] not in usuarios_id:
-                    usuarios_id.append(data_items.loc[i, 'user_id'])
+    juegos = data_juegos[data_juegos['genres'].str.contains(genero, case=False, na=False)]
+    juegos = juegos.drop(columns=['Unnamed: 0', 'publisher', 'genres', 'app_name', 'title', 'url', 'tags', 'reviews_url', 'specs', 'price', 'early_access', 'developer'])
+    juegos['release_date'] = juegos['release_date'].str[:4]
+    juegos.rename(columns={'id': 'item_id'}, inplace=True)
+    jugadores = pd.merge(data_items, juegos, on='item_id')
+    jugadores['playtime_forever'] = jugadores['playtime_forever'].astype(int)
 
-                if data_items.loc[i, 'user_id'] in usuarios:
-                    usuarios[data_items.loc[i, 'user_id']] += horas
-                else:
-                   usuarios[data_items.loc[i, 'user_id']] = horas
-                
-                if año != ' ':
-                    if año not in lista_años:
-                        lista_años.append(año)
-                    
-                    if año in horas_años:
-                        horas_años[año] += horas
-                    else:
-                        horas_años[año] = horas
-    usuario_max = ''
-    cantidad_max = 0
-    j = 0
-    for i in usuarios:
-        if cantidad_max < usuarios[i]:
-            cantidad_max = usuarios[i]
-            usuario_max = usuarios_id[j]
-        j += 1
-    print('Esta es la lista de cantidad de horas jugadas por cada año para el genero', genero)
-    print('Año    Horas')
-    j = 0
-    for i in horas_años:
-        print(lista_años[j],' ', horas_años[i])
-        j += 1
-    return print('Y el usuario con más horas acumuladas para dicho genero es', usuario_max, 'con un total de', cantidad_max, 'horas.')
+    años = jugadores.drop(columns=['user_id', 'item_id'])
+    años = años.groupby('release_date').agg({'playtime_forever': 'sum'})
+    
+    jugadores = jugadores.drop(columns=['item_id', 'release_date'])
+    jugadores = jugadores.groupby('user_id').agg({'playtime_forever': 'sum'})
+
+    jugadores = jugadores.sort_values(by='playtime_forever', ascending=False).head(5)
+    
+    año_salida = []
+    for i in range (0, len(años)):
+        año_salida.append(años.iloc[i])
+        
+
+    return str(str(jugadores) + str(año_salida))
 
 @app.get('/best_developer_year')
 def best_developer_year( año : int ):
-    año = str(año)
-    desarrolladores = {}
-    nombres_desarroladores = []
-    for i in range(0, len(data_review)):
-        posicion_juego = str(data_juegos.loc[data_juegos['id'] == str(data_review.loc[i, 'item_id'])].index)[7:-17]
-        if posicion_juego != '':
-            posicion_juego = int(posicion_juego)
-            if data_juegos.loc[posicion_juego, 'release_date'][0:4] == año:
-                desarrollador = data_juegos.loc[posicion_juego, 'developer']
-                if desarrollador in desarrolladores:
-                    if data_review.loc[i, 'sentiment_analysis'] == 2:
-                        desarrolladores[desarrollador]['Positivos'] += 1
-                else:
-                    if desarrollador not in nombres_desarroladores:
-                        nombres_desarroladores.append(desarrollador)
-                    
-                    if data_review.loc[i, 'sentiment_analysis'] == 2:
-                        desarrolladores[desarrollador] = {'Positivos': 1}
-                    else:
-                        desarrolladores[desarrollador]= {'Positivos': 0}
+    juegos = data_juegos.copy()
+    juegos['release_date'] = juegos['release_date'].str[:4]
+    juegos = juegos[juegos['release_date'].str.contains(str(año), case=False, na=False)]
+    juegos = juegos.drop(columns=['Unnamed: 0', 'publisher', 'app_name' ,'genres', 'title', 'url', 'tags', 'reviews_url', 'specs', 'price', 'early_access'])
+    juegos.rename(columns={'id': 'item_id'}, inplace=True)
+
+    review = data_review.copy()
+    review = review.drop(columns=['Unnamed: 0', 'user_id', 'user_url', 'funny', 'posted', 'last_edited', 'helpful', 'recommend'])
+    review['item_id'] = review['item_id'].astype(str)
     
-    mejores_tres = {'Primero': ['', 0], 'Segundo': ['', 0], 'Tercero': ['', 0]}
-    j= 0
-    for i in desarrolladores:
-        positivos = desarrolladores[i]['Positivos']
-        if positivos > mejores_tres['Primero'][1]:
-            
-            mejores_tres['Tercero'][0] = mejores_tres['Segundo'][0]
-            mejores_tres['Tercero'][1] = mejores_tres['Segundo'][1]
+    review = pd.merge(review, juegos, on='item_id')
+    review = review.drop(columns=['item_id', 'release_date'])
+    review = review.groupby('developer').agg({'sentiment_analysis': 'sum'})
+    review['sentiment_analysis'] = round(review['sentiment_analysis']/2)
+    review = review.sort_values(by='sentiment_analysis', ascending=False).head(3)
 
-            mejores_tres['Segundo'][0] = mejores_tres['Primero'][0]
-            mejores_tres['Segundo'][1] = mejores_tres['Primero'][1]
-            
-            mejores_tres['Primero'][0] = nombres_desarroladores[j]
-            mejores_tres['Primero'][1] = positivos
-
-        elif positivos > mejores_tres['Segundo'][1]:
-            mejores_tres['Tercero'][0] = mejores_tres['Segundo'][0]
-            mejores_tres['Tercero'][1] = mejores_tres['Segundo'][1]
-
-            mejores_tres['Segundo'][0] = nombres_desarroladores[j]
-            mejores_tres['Segundo'][1] = positivos
-
-        elif positivos > mejores_tres['Tercero'][1]:
-            mejores_tres['Tercero'][0] = nombres_desarroladores[j]
-            mejores_tres['Tercero'][1] = positivos
-        j += 1
-    return mejores_tres
+    return str(review)
 
 @app.get('/developer_reviews_analysis')
 def developer_reviews_analysis( desarrolladora : str ):
