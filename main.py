@@ -13,7 +13,7 @@ data_review = pd.read_parquet('Data_Limpia/nuevo_reviews_limpio.parquet')
 
 @app.get("/")
 def index():
-    return 'Bienvenido'
+    return 'Bienvenido, para tener una mejor experiencia con esta API ingrese al siguiente link: https://proyecto-individual-1-d6mc.onrender.com/docs#/'
 
 @app.get("/developer")
 def developer( desarrollador : str ):
