@@ -17,3 +17,8 @@ developer_reviews_analysis: al ingresar una desarrolladora te devuelve un diccio
 
 recomendacion_juego: al ingresar el id de un juego te devuelve el nombre de 5 juegos diferentes, que en su mayoría se intenta que sean de desarrolladoras diferentes y con un precio similiar.
 
+
+
+Aclaraciones:
+*Hay 2 archivos que aparecen nombrados en el proceso de ETL pero que no están disponibles en este repositorio porque su tamaño era suoerior al permitido paa subir a GitHub.
+*También hay archivos que no se utilizan al final, ya que fueron distintas iteraciones de los archivos finales y decidí dejarlo para saber de donde vienen esos archivos.
