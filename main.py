@@ -135,10 +135,21 @@ def best_developer_year( año : int ):
 
 @app.get('/developer_reviews_analysis')
 def developer_reviews_analysis( desarrolladora : str ):
+    juegos = data_juegos.copy()
+    juegos = juegos[juegos['developer'].str.contains(desarrolladora, case=False, na=False)]
+    juegos = juegos.drop(columns=['Unnamed: 0', 'publisher', 'app_name' ,'genres', 'title', 'url', 'tags', 'reviews_url', 'specs', 'price', 'early_access'])
+    juegos.rename(columns={'id': 'item_id'}, inplace=True)
+    
+    review = data_review.copy()
+    review = review.drop(columns=['Unnamed: 0', 'user_id', 'user_url', 'funny', 'posted', 'last_edited', 'helpful', 'recommend'])
+    review['item_id'] = review['item_id'].astype(str)
+    review = pd.merge(review, juegos, on='item_id')
+    
     salida = {}
     salida[desarrolladora] = [0, 0]
-    for i in range(0, len(data_review)):
-        posicion_juego = str(data_juegos.loc[data_juegos['id'] == str(data_review.loc[i, 'item_id'])].index)[7:-17]
+    
+    for i in range(0, len(review)):
+        posicion_juego = str(data_juegos.loc[data_juegos['id'] == str(review.loc[i, 'item_id'])].index)[7:-17]
         if posicion_juego != '':
             posicion_juego = int(posicion_juego)
             if desarrolladora == data_juegos.loc[posicion_juego, 'developer']:
@@ -146,6 +157,8 @@ def developer_reviews_analysis( desarrolladora : str ):
                     salida[desarrolladora][1] += 1
                 elif data_review.loc[i, 'sentiment_analysis'] == 0:
                     salida[desarrolladora][0] += 1
+
+
     return salida
 
 @app.get('/recomendacion_juego')
